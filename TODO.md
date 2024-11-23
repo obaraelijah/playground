@@ -1,6 +1,6 @@
 # TODO
 
-* [ ] actor communication
+* [x] actor communication
 
 * [ ] websockets
 

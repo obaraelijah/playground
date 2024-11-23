@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 actix = "^0.13.0"
 actix-rt = "2.2.0"
+jonases-tracing-util = "^0.2.0"
