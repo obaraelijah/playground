@@ -1,70 +1,43 @@
 {
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "identifier": "com.tauri.dev",
+  "productName": "tauri-app",
+  "version": "0.0.0",
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "devPath": "../src",
-    "distDir": "../src",
-    "withGlobalTauri": true
+    "frontendDist": "../src"
   },
-  "package": {
-    "productName": "tauri",
-    "version": "0.0.0"
-  },
-  "tauri": {
-    "allowlist": {
-      "all": false,
-      "shell": {
-        "all": false,
-        "open": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "category": "DeveloperTool",
-      "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "identifier": "com.tauri.dev",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "",
-      "targets": "all",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": ""
-      }
-    },
+  "app": {
     "security": {
       "csp": null
-    },
-    "updater": {
-      "active": false
     },
     "windows": [
       {
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "tauri",
+        "title": "Tauri App",
         "width": 800
       }
     ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage", "dmg", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "DeveloperTool",
+    "copyright": ""
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
   }
 }
