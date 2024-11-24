@@ -6,6 +6,10 @@
 
 * [ ] project + entry types 
 
+* [x] environment variable for directory to store projects in
+
+* [ ] entry type
+
 * [ ] data layer: 
 
   - [ ] create project (sqlite db on disk)
