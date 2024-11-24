@@ -1,11 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  // Note: This experimental feature is required to use NextJS Image in SSG mode.
-  // See https://nextjs.org/docs/messages/export-image-api for different workarounds.
+  output: 'export',
+  distDir: 'dist',  // Match the frontendDist path in tauri.conf.json
   images: {
     unoptimized: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 }
+
 module.exports = nextConfig

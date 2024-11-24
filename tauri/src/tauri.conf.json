@@ -4,10 +4,10 @@
   "productName": "tauri-app",
   "version": "0.0.0",
   "build": {
-    "beforeBuildCommand": "cd frontend && npm run build && npm run export",
-    "beforeDevCommand": "cd frontend && npm run dev",
-    "devPath": "http://localhost:3000",
-    "distDir": "frontend/out"
+    "beforeBuildCommand": "cd ../frontend && npm run build",
+    "beforeDevCommand": "cd ../frontend && npm run dev",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../frontend/dist"
   },
   "app": {
     "security": {
