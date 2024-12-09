@@ -2,6 +2,10 @@
 
 * [x] invoke rust from frontend
 
+* [ ] dev documentation in readme
+
+* [x] invoke rust from frontend
+
 * [x] dev documentation in readme
 
 * [ ] project + entry types 

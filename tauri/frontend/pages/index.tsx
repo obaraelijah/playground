@@ -11,7 +11,7 @@ export default function Home() {
   useEffect(() => {
     invoke<string>('greet', { name: 'World' })
       .then(setGreeting)
-      .catch((error) => console.error(error));
+      .catch((error: any) => console.error(error));
   }, []);
 
   return (
