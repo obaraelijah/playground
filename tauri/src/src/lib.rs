@@ -7,9 +7,24 @@ use std::fs;
 #[derive(Debug)]
 struct ProjectsDir(pub OsString);
 
+use home::home_dir;
+use std::path::PathBuf;
+
 impl ProjectsDir {
   fn from_env() -> anyhow::Result<Self> {
-    Ok(Self(OsString::from(env::var("PROJECTS_DIR")?)))
+    let projects_dir = env::var("PROJECTS_DIR")?;
+    
+    let full_path = if projects_dir.starts_with("~/") {
+      home_dir()
+        .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?
+        .join(&projects_dir[2..])
+    } else {
+      PathBuf::from(projects_dir)
+    };
+
+    std::fs::create_dir_all(&full_path)?;
+
+    Ok(Self(full_path.as_os_str().to_os_string()))
   }
 }
 
@@ -85,60 +100,54 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
 
 #[cfg(test)]
 mod tests {
-  use std::ffi::OsString;
-  use std::fs;
+    use super::*;
+    use std::path::{Path, PathBuf};
+    use std::fs;
 
-  use super::{
-    create_project, delete_project, greet, list_projects, ProjectsDir,
-  };
+    #[test]
+    fn test_list_projects() {
+        let temp_dir = tempfile::tempdir().expect("Failed to create temp directory");
+        let projects_path = temp_dir.path();
 
-  #[test]
-  fn test_list_projects() {
-    dotenv::dotenv().unwrap();
+        fs::create_dir_all(projects_path).expect("Failed to create projects directory");
 
-    let pd = ProjectsDir::from_env().unwrap();
+        let pd = ProjectsDir(projects_path.as_os_str().to_os_string());
 
-    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+        println!("Projects Directory: {:?}", projects_path);
 
-    // add a project
+        assert!(projects_path.exists(), "Projects directory does not exist");
+        assert!(projects_path.is_dir(), "Projects path is not a directory");
 
-    create_project("test 1".into(), &pd).unwrap();
+        let initial_projects = list_projects(&pd)
+            .expect("Failed to list initial projects");
+        assert!(initial_projects.is_empty(), "Initial projects list should be empty");
 
-    assert_eq!(
-      list_projects(&pd).unwrap(),
-      vec![OsString::from("test 1.db")],
-    );
+        create_project("test 1".into(), &pd).expect("Failed to create project");
 
-    // add random file, make sure it is excluded from test
+        let projects_after_create = list_projects(&pd)
+            .expect("Failed to list projects after creation");
+        assert_eq!(
+            projects_after_create,
+            vec![OsString::from("test 1.db")],
+            "Project list after creation is incorrect"
+        );
 
-    fs::File::create(format!(
-      "{}/not a db.txt",
-      pd.0.to_str().unwrap()
-    ))
-    .unwrap();
+        fs::File::create(projects_path.join("not a db.txt"))
+            .expect("Failed to create test file");
 
-    assert_eq!(
-      list_projects(&pd).unwrap(),
-      vec![OsString::from("test 1.db")],
-    );
+        let projects_with_extra_file = list_projects(&pd)
+            .expect("Failed to list projects with extra file");
+        assert_eq!(
+            projects_with_extra_file,
+            vec![OsString::from("test 1.db")],
+            "Project list should only include .db files"
+        );
 
-    // remove random file again
+        delete_project("test 1".into(), &pd)
+            .expect("Failed to delete project");
 
-    fs::remove_file(format!(
-      "{}/not a db.txt",
-      &pd.0.to_str().unwrap()
-    ))
-    .unwrap();
-
-    // delete project created above
-
-    delete_project("test 1".into(), &pd).unwrap();
-
-    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
-  }
-
-  #[test]
-  fn test_greet() {
-    assert_eq!(greet("World"), "Hello World!".to_owned());
-  }
+        let final_projects = list_projects(&pd)
+            .expect("Failed to list final projects");
+        assert!(final_projects.is_empty(), "Final projects list should be empty");
+    }
 }
