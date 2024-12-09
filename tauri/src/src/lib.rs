@@ -25,14 +25,36 @@ fn greet(name: &str) -> String {
   format!("Hello {}!", name)
 }
 
-fn create_project(name: OsString) -> anyhow::Result<()> {
-  todo!()
+fn create_project(
+  name: OsString,
+  dir: &ProjectsDir,
+) -> anyhow::Result<()> {
+  let mut file_name = dir.0.clone();
+  file_name.push(name);
+  file_name.push(".db");
+
+  fs::File::options()
+    .read(true)
+    .write(true)
+    .create_new(true)
+    .open(file_name)?;
+
+  Ok(())
+}
+
+fn delete_project(
+  name: OsString,
+  dir: &ProjectsDir,
+) -> anyhow::Result<()> {
+  let mut file_name = dir.0.clone();
+  file_name.push(name);
+  file_name.push(".db");
+
+  Ok(fs::remove_file(file_name)?)
 }
 
 fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<OsString>> {
   let mut projects = Vec::new();
-
-  println!("{:?}", dir);
 
   for entry in fs::read_dir(&dir.0)? {
     let file_name = entry?.file_name();
@@ -64,17 +86,55 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
 #[cfg(test)]
 mod tests {
   use std::ffi::OsString;
+  use std::fs;
 
-  use super::{greet, list_projects, ProjectsDir};
+  use super::{
+    create_project, delete_project, greet, list_projects, ProjectsDir,
+  };
 
   #[test]
   fn test_list_projects() {
     dotenv::dotenv().unwrap();
 
+    let pd = ProjectsDir::from_env().unwrap();
+
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+
+    // add a project
+
+    create_project("test 1".into(), &pd).unwrap();
+
     assert_eq!(
-      list_projects(&ProjectsDir::from_env().unwrap()).unwrap(),
-      Vec::<OsString>::new(),
+      list_projects(&pd).unwrap(),
+      vec![OsString::from("test 1.db")],
     );
+
+    // add random file, make sure it is excluded from test
+
+    fs::File::create(format!(
+      "{}/not a db.txt",
+      pd.0.to_str().unwrap()
+    ))
+    .unwrap();
+
+    assert_eq!(
+      list_projects(&pd).unwrap(),
+      vec![OsString::from("test 1.db")],
+    );
+
+    // remove random file again
+
+    fs::remove_file(format!(
+      "{}/not a db.txt",
+      &pd.0.to_str().unwrap()
+    ))
+    .unwrap();
+
+    // delete project created above
+
+    delete_project("test 1".into(), &pd).unwrap();
+
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
   }
 
   #[test]
