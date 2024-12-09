@@ -6,7 +6,7 @@
 
 * [x] environment variable for directory to store projects in
 
-* [ ] entry type
+* [x] entry type
 
 * [ ] data layer: 
 

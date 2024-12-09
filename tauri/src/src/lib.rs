@@ -2,6 +2,13 @@ use std::env;
 
 struct ProjectsDir(pub String);
 
+struct Entry {
+    id: u32,
+    title: String,
+    body: String,
+    published: bool,
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
   format!("Hello {}!", name)
