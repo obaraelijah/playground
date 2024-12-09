@@ -2,7 +2,7 @@
 
 * [x] invoke rust from frontend
 
-* [ ] dev documentation in readme
+* [x] dev documentation in readme
 
 * [x] invoke rust from frontend
 

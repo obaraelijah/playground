@@ -7,7 +7,6 @@ storage.
 ## Development Setup
 
 ### Prerequisites
-
 Tauri has a [guide][prerequisites] for setting up the basic 
 dependencies for tauri apps, including the rust toolchain.
 Additionally, since this example app uses 
