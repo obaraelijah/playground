@@ -12,12 +12,21 @@
 
   - [ ] create project (sqlite db on disk)
 
-  - [ ] delete project  
+  - [x] delete project  
+
+  - [x] list projects  
+
+  - [ ] better projects abstraction than procedural API with 
+    `ProjectsDir` struct
 
   - [ ] insert entry into project
 
   - [ ] delete entry from project
 
   - [ ] read entries from project
+
+* [ ] proper state management
+
+  - [ ] cache db connections
 
 * [ ] graphql interface
