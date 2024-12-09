@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "^1.0.68"
+dotenv = "^0.15.0"
 actix = "^0.13.0"
 actix-rt = "2.2.0"
 jonases-tracing-util = "^0.2.0"
