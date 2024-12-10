@@ -2,7 +2,6 @@
 name = "example_app"
 version = "0.0.0"
 description = "A Tauri App"
-authors = ["you"]
 license = ""
 repository = ""
 edition = "2021"
@@ -15,10 +14,10 @@ anyhow = "^1.0.68"
 dotenv = "^0.15.0"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+sqlx = { version = "0.6", features = [ "runtime-tokio-native-tls" , "sqlite" ] }
 tauri = { version = "2.0", features = [] }
 tauri-plugin-shell = "2.0"
-home = "0.5.5"
-tempfile = "3.5.0"
+tokio = { version = "1", features = ["full"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

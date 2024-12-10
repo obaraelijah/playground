@@ -13,10 +13,12 @@ use std::path::PathBuf;
 impl ProjectsDir {
   fn from_env() -> anyhow::Result<Self> {
     let projects_dir = env::var("PROJECTS_DIR")?;
-    
+
     let full_path = if projects_dir.starts_with("~/") {
       home_dir()
-        .ok_or_else(|| anyhow::anyhow!("Could not find home directory"))?
+        .ok_or_else(|| {
+          anyhow::anyhow!("Could not find home directory")
+        })?
         .join(&projects_dir[2..])
     } else {
       PathBuf::from(projects_dir)
@@ -100,54 +102,69 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::path::{Path, PathBuf};
-    use std::fs;
+  use super::*;
+  use std::fs;
+  use std::path::{Path, PathBuf};
 
-    #[test]
-    fn test_list_projects() {
-        let temp_dir = tempfile::tempdir().expect("Failed to create temp directory");
-        let projects_path = temp_dir.path();
+  #[test]
+  fn test_list_projects() {
+    let temp_dir =
+      tempfile::tempdir().expect("Failed to create temp directory");
+    let projects_path = temp_dir.path();
 
-        fs::create_dir_all(projects_path).expect("Failed to create projects directory");
+    fs::create_dir_all(projects_path)
+      .expect("Failed to create projects directory");
 
-        let pd = ProjectsDir(projects_path.as_os_str().to_os_string());
+    let pd = ProjectsDir(projects_path.as_os_str().to_os_string());
 
-        println!("Projects Directory: {:?}", projects_path);
+    println!("Projects Directory: {:?}", projects_path);
 
-        assert!(projects_path.exists(), "Projects directory does not exist");
-        assert!(projects_path.is_dir(), "Projects path is not a directory");
+    assert!(
+      projects_path.exists(),
+      "Projects directory does not exist"
+    );
+    assert!(
+      projects_path.is_dir(),
+      "Projects path is not a directory"
+    );
 
-        let initial_projects = list_projects(&pd)
-            .expect("Failed to list initial projects");
-        assert!(initial_projects.is_empty(), "Initial projects list should be empty");
+    let initial_projects =
+      list_projects(&pd).expect("Failed to list initial projects");
+    assert!(
+      initial_projects.is_empty(),
+      "Initial projects list should be empty"
+    );
 
-        create_project("test 1".into(), &pd).expect("Failed to create project");
+    create_project("test 1".into(), &pd)
+      .expect("Failed to create project");
 
-        let projects_after_create = list_projects(&pd)
-            .expect("Failed to list projects after creation");
-        assert_eq!(
-            projects_after_create,
-            vec![OsString::from("test 1.db")],
-            "Project list after creation is incorrect"
-        );
+    let projects_after_create = list_projects(&pd)
+      .expect("Failed to list projects after creation");
+    assert_eq!(
+      projects_after_create,
+      vec![OsString::from("test 1.db")],
+      "Project list after creation is incorrect"
+    );
 
-        fs::File::create(projects_path.join("not a db.txt"))
-            .expect("Failed to create test file");
+    fs::File::create(projects_path.join("not a db.txt"))
+      .expect("Failed to create test file");
 
-        let projects_with_extra_file = list_projects(&pd)
-            .expect("Failed to list projects with extra file");
-        assert_eq!(
-            projects_with_extra_file,
-            vec![OsString::from("test 1.db")],
-            "Project list should only include .db files"
-        );
+    let projects_with_extra_file = list_projects(&pd)
+      .expect("Failed to list projects with extra file");
+    assert_eq!(
+      projects_with_extra_file,
+      vec![OsString::from("test 1.db")],
+      "Project list should only include .db files"
+    );
 
-        delete_project("test 1".into(), &pd)
-            .expect("Failed to delete project");
+    delete_project("test 1".into(), &pd)
+      .expect("Failed to delete project");
 
-        let final_projects = list_projects(&pd)
-            .expect("Failed to list final projects");
-        assert!(final_projects.is_empty(), "Final projects list should be empty");
-    }
+    let final_projects =
+      list_projects(&pd).expect("Failed to list final projects");
+    assert!(
+      final_projects.is_empty(),
+      "Final projects list should be empty"
+    );
+  }
 }
