@@ -65,9 +65,12 @@ impl ProjectsDir {
 
 // data access layer:
 //
-// * Projects
+// * Projects (ops for projects: list, create, delete)
 // * Project (db connection)
-// * ProjectCache
+// * ProjectCache (Map<String, Project>, shared)
+//
+// ... single thread-safe DAL struct with cache and all ops.
+//     Cache updated via interior mutability (Arc<RwLock<Cache>>)
 //
 // GQL api:
 //
