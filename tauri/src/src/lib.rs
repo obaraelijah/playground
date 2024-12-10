@@ -103,6 +103,18 @@ fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<OsString>> {
   Ok(projects)
 }
 
+async fn insert_entry() -> anyhow::Result<()> {
+  todo!()
+}
+
+async fn delete_entry() -> anyhow::Result<()> {
+  todo!()
+}
+
+async fn list_entries() -> anyhow::Result<()> {
+  todo!()
+}
+
 pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
   Ok(
     tauri::Builder::default()
