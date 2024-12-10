@@ -8,7 +8,7 @@
 
 * [x] entry type
 
-* [ ] use String instead of OsString
+* [x] use String instead of OsString
 
 * [ ] data layer: 
 

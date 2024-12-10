@@ -3,15 +3,14 @@ use anyhow::anyhow;
 use sqlx::sqlite::SqlitePoolOptions;
 
 use std::env;
-use std::ffi::OsString;
 use std::fs;
 
 #[derive(Debug)]
-struct ProjectsDir(pub OsString);
+struct ProjectsDir(pub String);
 
 impl ProjectsDir {
   fn from_env() -> anyhow::Result<Self> {
-    Ok(Self(OsString::from(env::var("PROJECTS_DIR")?)))
+    Ok(Self(env::var("PROJECTS_DIR")?))
   }
 }
 
@@ -29,12 +28,10 @@ fn greet(name: &str) -> String {
 }
 
 async fn create_project(
-  name: OsString,
+  name: String,
   dir: &ProjectsDir,
 ) -> anyhow::Result<()> {
-  let mut file_name = dir.0.clone();
-  file_name.push(name);
-  file_name.push(".db");
+  let file_name = format!("{}/{}.db", dir.0, name);
 
   // File must be created first, so that the pool can connect.
   //
@@ -49,42 +46,38 @@ async fn create_project(
       .open(&file_name)?;
   }
 
-  let mut db = OsString::from("sqlite:");
-  db.push(&file_name);
+  let db = format!("sqlite:{}", file_name);
 
   let pool = SqlitePoolOptions::new()
     .max_connections(1)
-    .connect(db.to_str().ok_or(anyhow!("path to db is faulty"))?)
+    .connect(&db)
     .await?;
 
-    sqlx::query(
-      "
-        CREATE TABLE entries (
-          id INTEGER PRIMARY KEY NOT NULL,
-          title TEXT NOT NULL,
-          body TEXT NOT NULL,
-          published NOT NULL
-        );
-      ",
-    )
-    .execute(&pool)
-    .await?;
+  sqlx::query(
+    "
+      CREATE TABLE entries (
+        id INTEGER PRIMARY KEY NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        published NOT NULL
+      );
+    ",
+  )
+  .execute(&pool)
+  .await?;
 
   Ok(())
 }
 
 fn delete_project(
-  name: OsString,
+  name: String,
   dir: &ProjectsDir,
 ) -> anyhow::Result<()> {
-  let mut file_name = dir.0.clone();
-  file_name.push(name);
-  file_name.push(".db");
-
+  let file_name = format!("{}/{}.db", dir.0, name);
   Ok(fs::remove_file(file_name)?)
 }
 
-fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<OsString>> {
+fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<String>> {
   let mut projects = Vec::new();
 
   for entry in fs::read_dir(&dir.0)? {
@@ -92,13 +85,15 @@ fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<OsString>> {
 
     let file_ext = file_name
       .to_str()
-      .ok_or(anyhow!("error reading file"))?
+      .ok_or(anyhow!("error reading file name"))?
       .split(".")
       .last()
-      .ok_or(anyhow!("error reading file"))?;
+      .ok_or(anyhow!("error deconstructing file name"))?;
 
     if file_ext == "db" {
-      projects.push(file_name);
+      projects.push(file_name.into_string().map_err(|_| {
+        anyhow!("couldn't parse file name into valid UTF-8")
+      })?);
     }
   }
 
@@ -131,7 +126,6 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
 
 #[cfg(test)]
 mod tests {
-  use std::ffi::OsString;
   use std::fs;
 
   use super::{
@@ -163,7 +157,7 @@ mod tests {
 
     let pd = ProjectsDir::from_env().unwrap();
 
-    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<String>::new());
 
     // add a project
 
@@ -171,35 +165,27 @@ mod tests {
 
     assert_eq!(
       list_projects(&pd).unwrap(),
-      vec![OsString::from("test 1.db")],
+      vec!["test 1.db".to_owned()],
     );
 
     // add random file, make sure it is excluded from test
 
-    fs::File::create(format!(
-      "{}/not a db.txt",
-      pd.0.to_str().unwrap()
-    ))
-    .unwrap();
+    fs::File::create(format!("{}/not a db.txt", pd.0)).unwrap();
 
     assert_eq!(
       list_projects(&pd).unwrap(),
-      vec![OsString::from("test 1.db")],
+      vec!["test 1.db".to_owned()],
     );
 
     // remove random file again
 
-    fs::remove_file(format!(
-      "{}/not a db.txt",
-      &pd.0.to_str().unwrap()
-    ))
-    .unwrap();
+    fs::remove_file(format!("{}/not a db.txt", pd.0)).unwrap();
 
     // delete project created above
 
     delete_project("test 1".into(), &pd).unwrap();
 
-    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<String>::new());
   }
 
   #[test]
