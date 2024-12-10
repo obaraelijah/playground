@@ -1,5 +1,7 @@
 use anyhow::anyhow;
 
+use sqlx::sqlite::SqlitePoolOptions;
+
 use std::env;
 use std::ffi::OsString;
 use std::fs;
@@ -7,29 +9,13 @@ use std::fs;
 #[derive(Debug)]
 struct ProjectsDir(pub OsString);
 
-use home::home_dir;
-use std::path::PathBuf;
-
 impl ProjectsDir {
   fn from_env() -> anyhow::Result<Self> {
-    let projects_dir = env::var("PROJECTS_DIR")?;
-
-    let full_path = if projects_dir.starts_with("~/") {
-      home_dir()
-        .ok_or_else(|| {
-          anyhow::anyhow!("Could not find home directory")
-        })?
-        .join(&projects_dir[2..])
-    } else {
-      PathBuf::from(projects_dir)
-    };
-
-    std::fs::create_dir_all(&full_path)?;
-
-    Ok(Self(full_path.as_os_str().to_os_string()))
+    Ok(Self(OsString::from(env::var("PROJECTS_DIR")?)))
   }
 }
 
+#[derive(sqlx::FromRow)]
 struct Entry {
   id: u32,
   title: String,
@@ -42,7 +28,7 @@ fn greet(name: &str) -> String {
   format!("Hello {}!", name)
 }
 
-fn create_project(
+async fn create_project(
   name: OsString,
   dir: &ProjectsDir,
 ) -> anyhow::Result<()> {
@@ -50,11 +36,37 @@ fn create_project(
   file_name.push(name);
   file_name.push(".db");
 
-  fs::File::options()
-    .read(true)
-    .write(true)
-    .create_new(true)
-    .open(file_name)?;
+  // File must be created first, so that the pool can connect.
+  //
+  // Also, this call fails if the project already exists, making sure
+  // we don't accidentally override an existing project.
+  //
+  {
+    fs::File::options()
+      .read(true)
+      .write(true)
+      .create_new(true)
+      .open(&file_name)?;
+  }
+
+  let mut db = OsString::from("sqlite:");
+  db.push(&file_name);
+
+  let pool = SqlitePoolOptions::new()
+    .max_connections(1)
+    .connect(db.to_str().ok_or(anyhow!("path to db is faulty"))?)
+    .await?;
+
+  // TODO: add all the tables (entries)
+
+  let setup = "
+    CREATE TABLE entries (
+      id INTEGER PRIMARY KEY NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      published NOT NULL
+    );
+  ";
 
   Ok(())
 }
@@ -102,69 +114,79 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use std::ffi::OsString;
   use std::fs;
-  use std::path::{Path, PathBuf};
+
+  use super::{
+    create_project, delete_project, greet, list_projects, ProjectsDir,
+  };
+
+  #[tokio::test]
+  async fn test_duplicated_project() {
+    dotenv::dotenv().unwrap();
+
+    let pd = ProjectsDir::from_env().unwrap();
+
+    create_project("test dublicated".into(), &pd).await.unwrap();
+
+    // second call should fail, because project already exists
+
+    assert!(create_project("test dublicated".into(), &pd)
+      .await
+      .is_err());
+
+    // clean up projects after test
+
+    delete_project("test dublicated".into(), &pd).unwrap();
+  }
+
+  #[tokio::test]
+  async fn test_list_projects() {
+    dotenv::dotenv().unwrap();
+
+    let pd = ProjectsDir::from_env().unwrap();
+
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+
+    // add a project
+
+    create_project("test 1".into(), &pd).await.unwrap();
+
+    assert_eq!(
+      list_projects(&pd).unwrap(),
+      vec![OsString::from("test 1.db")],
+    );
+
+    // add random file, make sure it is excluded from test
+
+    fs::File::create(format!(
+      "{}/not a db.txt",
+      pd.0.to_str().unwrap()
+    ))
+    .unwrap();
+
+    assert_eq!(
+      list_projects(&pd).unwrap(),
+      vec![OsString::from("test 1.db")],
+    );
+
+    // remove random file again
+
+    fs::remove_file(format!(
+      "{}/not a db.txt",
+      &pd.0.to_str().unwrap()
+    ))
+    .unwrap();
+
+    // delete project created above
+
+    delete_project("test 1".into(), &pd).unwrap();
+
+    assert_eq!(list_projects(&pd).unwrap(), Vec::<OsString>::new(),);
+  }
 
   #[test]
-  fn test_list_projects() {
-    let temp_dir =
-      tempfile::tempdir().expect("Failed to create temp directory");
-    let projects_path = temp_dir.path();
-
-    fs::create_dir_all(projects_path)
-      .expect("Failed to create projects directory");
-
-    let pd = ProjectsDir(projects_path.as_os_str().to_os_string());
-
-    println!("Projects Directory: {:?}", projects_path);
-
-    assert!(
-      projects_path.exists(),
-      "Projects directory does not exist"
-    );
-    assert!(
-      projects_path.is_dir(),
-      "Projects path is not a directory"
-    );
-
-    let initial_projects =
-      list_projects(&pd).expect("Failed to list initial projects");
-    assert!(
-      initial_projects.is_empty(),
-      "Initial projects list should be empty"
-    );
-
-    create_project("test 1".into(), &pd)
-      .expect("Failed to create project");
-
-    let projects_after_create = list_projects(&pd)
-      .expect("Failed to list projects after creation");
-    assert_eq!(
-      projects_after_create,
-      vec![OsString::from("test 1.db")],
-      "Project list after creation is incorrect"
-    );
-
-    fs::File::create(projects_path.join("not a db.txt"))
-      .expect("Failed to create test file");
-
-    let projects_with_extra_file = list_projects(&pd)
-      .expect("Failed to list projects with extra file");
-    assert_eq!(
-      projects_with_extra_file,
-      vec![OsString::from("test 1.db")],
-      "Project list should only include .db files"
-    );
-
-    delete_project("test 1".into(), &pd)
-      .expect("Failed to delete project");
-
-    let final_projects =
-      list_projects(&pd).expect("Failed to list final projects");
-    assert!(
-      final_projects.is_empty(),
-      "Final projects list should be empty"
-    );
+  fn test_greet() {
+    assert_eq!(greet("World"), "Hello World!".to_owned());
   }
 }
