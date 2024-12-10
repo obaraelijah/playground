@@ -1,9 +1,33 @@
 use anyhow::anyhow;
 
+use async_graphql::{
+  EmptySubscription, Object, Request, Response, Schema, ServerError,
+};
+
 use sqlx::sqlite::SqlitePoolOptions;
+
+use tauri::State;
 
 use std::env;
 use std::fs;
+
+struct Query;
+
+#[Object]
+impl Query {
+  async fn greet(&self, name: String) -> String {
+    format!("Hello {}!", name)
+  }
+}
+
+struct Mutation;
+
+#[Object]
+impl Mutation {
+  async fn greet_mut(&self, name: String) -> String {
+    format!("Hello {}!", name)
+  }
+}
 
 #[derive(Debug)]
 struct ProjectsDir(pub String);
@@ -14,6 +38,13 @@ impl ProjectsDir {
   }
 }
 
+// Projects
+// Project (db connection)
+// ProjectCache
+//
+// GQL Query
+// GQL Mutations
+
 #[derive(sqlx::FromRow)]
 struct Entry {
   id: u32,
@@ -23,8 +54,11 @@ struct Entry {
 }
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-  format!("Hello {}!", name)
+async fn graphql(
+  query: Request,
+  schema: State<'_, Schema<Query, Mutation, EmptySubscription>>,
+) -> Result<Response, Vec<ServerError>> {
+  schema.execute(query).await.into_result()
 }
 
 async fn create_project(
@@ -119,7 +153,10 @@ pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
   Ok(
     tauri::Builder::default()
       .manage(ProjectsDir::from_env()?)
-      .invoke_handler(tauri::generate_handler![greet])
+      .manage(
+        Schema::build(Query, Mutation, EmptySubscription).finish(),
+      )
+      .invoke_handler(tauri::generate_handler![graphql])
       .build(tauri::generate_context!())?,
   )
 }
@@ -129,7 +166,7 @@ mod tests {
   use std::fs;
 
   use super::{
-    create_project, delete_project, greet, list_projects, ProjectsDir,
+    create_project, delete_project, list_projects, ProjectsDir,
   };
 
   #[tokio::test]
@@ -186,10 +223,5 @@ mod tests {
     delete_project("test 1".into(), &pd).unwrap();
 
     assert_eq!(list_projects(&pd).unwrap(), Vec::<String>::new());
-  }
-
-  #[test]
-  fn test_greet() {
-    assert_eq!(greet("World"), "Hello World!".to_owned());
   }
 }
