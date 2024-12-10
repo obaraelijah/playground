@@ -1,7 +1,8 @@
 use anyhow::anyhow;
 
 use async_graphql::{
-  EmptySubscription, Object, Request, Response, Schema, ServerError,
+  EmptySubscription, InputObject, Object, Request, Response, Schema,
+  ServerError, SimpleObject,
 };
 
 use sqlx::sqlite::SqlitePoolOptions;
@@ -15,8 +16,16 @@ struct Query;
 
 #[Object]
 impl Query {
-  async fn greet(&self, name: String) -> String {
-    format!("Hello {}!", name)
+  async fn projects(&self) -> Vec<String> {
+    todo!()
+  }
+
+  async fn entries(&self, project: String) -> Vec<Entry> {
+    todo!()
+  }
+
+  async fn entry(&self, project: String, id: u32) -> Option<Entry> {
+    todo!()
   }
 }
 
@@ -24,8 +33,24 @@ struct Mutation;
 
 #[Object]
 impl Mutation {
-  async fn greet_mut(&self, name: String) -> String {
-    format!("Hello {}!", name)
+  async fn create_project(&self, project: String) -> bool {
+    todo!()
+  }
+
+  async fn delete_project(&self, project: String) -> bool {
+    todo!()
+  }
+
+  async fn create_entry(
+    &self,
+    project: String,
+    entry: Entry,
+  ) -> bool {
+    todo!()
+  }
+
+  async fn delete_entry(&self, project: String, id: u32) -> bool {
+    todo!()
   }
 }
 
@@ -45,20 +70,12 @@ impl ProjectsDir {
 // GQL Query
 // GQL Mutations
 
-#[derive(sqlx::FromRow)]
+#[derive(sqlx::FromRow, SimpleObject, InputObject)]
 struct Entry {
   id: u32,
   title: String,
   body: String,
   published: bool,
-}
-
-#[tauri::command]
-async fn graphql(
-  query: Request,
-  schema: State<'_, Schema<Query, Mutation, EmptySubscription>>,
-) -> Result<Response, Vec<ServerError>> {
-  schema.execute(query).await.into_result()
 }
 
 async fn create_project(
@@ -147,6 +164,14 @@ async fn delete_entry() -> anyhow::Result<()> {
 async fn list_entries() -> anyhow::Result<()> {
   // here access cached connection pool to project
   todo!()
+}
+
+#[tauri::command]
+async fn graphql(
+  query: Request,
+  schema: State<'_, Schema<Query, Mutation, EmptySubscription>>,
+) -> Result<Response, Vec<ServerError>> {
+  schema.execute(query).await.into_result()
 }
 
 pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
