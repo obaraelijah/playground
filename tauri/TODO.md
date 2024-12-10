@@ -32,3 +32,6 @@
   - [ ] cache db connections
 
 * [ ] graphql interface
+  
+* [ ] secure tauri (isolation, csp, ...)
+ 
