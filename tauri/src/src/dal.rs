@@ -79,12 +79,22 @@ struct Project {
 }
 
 impl Project {
-  async fn create(db: &str) -> anyhow::Result<Self> {
+  async fn open(db: &str) -> anyhow::Result<Self> {
     let pool = SqlitePoolOptions::new()
       .max_connections(1)
       .connect(&db)
       .await?;
 
+    Ok(Self { pool })
+  }
+
+  async fn create(db: &str) -> anyhow::Result<Self> {
+    let instance = Self::open(db).await?;
+    instance.create_tables().await?;
+    Ok(instance)
+  }
+
+  async fn create_tables(&self) -> anyhow::Result<()> {
     sqlx::query(
       "
       CREATE TABLE entries (
@@ -95,10 +105,10 @@ impl Project {
       );
     ",
     )
-    .execute(&pool)
+    .execute(&self.pool)
     .await?;
 
-    Ok(Self { pool })
+    Ok(())
   }
 
   async fn insert_entry() -> anyhow::Result<()> {
