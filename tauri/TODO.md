@@ -8,6 +8,8 @@
 
 * [x] entry type
 
+* [ ] use String instead of OsString
+
 * [ ] data layer: 
 
   - [x] create project (sqlite db on disk)

@@ -106,14 +106,17 @@ fn list_projects(dir: &ProjectsDir) -> anyhow::Result<Vec<OsString>> {
 }
 
 async fn insert_entry() -> anyhow::Result<()> {
+  // here access cached connection pool to project
   todo!()
 }
 
 async fn delete_entry() -> anyhow::Result<()> {
+  // here access cached connection pool to project
   todo!()
 }
 
 async fn list_entries() -> anyhow::Result<()> {
+  // here access cached connection pool to project
   todo!()
 }
 
