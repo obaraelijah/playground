@@ -63,12 +63,19 @@ impl ProjectsDir {
   }
 }
 
-// Projects
-// Project (db connection)
-// ProjectCache
+// data access layer:
 //
-// GQL Query
-// GQL Mutations
+// * Projects
+// * Project (db connection)
+// * ProjectCache
+//
+// GQL api:
+//
+// * Query
+// * Mutation
+//
+// GQL api needs access to data access layer
+// (Projects, Project and ProjectCache)
 
 #[derive(sqlx::FromRow, SimpleObject, InputObject)]
 struct Entry {
