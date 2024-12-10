@@ -57,16 +57,18 @@ async fn create_project(
     .connect(db.to_str().ok_or(anyhow!("path to db is faulty"))?)
     .await?;
 
-  // TODO: add all the tables (entries)
-
-  let setup = "
-    CREATE TABLE entries (
-      id INTEGER PRIMARY KEY NOT NULL,
-      title TEXT NOT NULL,
-      body TEXT NOT NULL,
-      published NOT NULL
-    );
-  ";
+    sqlx::query(
+      "
+        CREATE TABLE entries (
+          id INTEGER PRIMARY KEY NOT NULL,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          published NOT NULL
+        );
+      ",
+    )
+    .execute(&pool)
+    .await?;
 
   Ok(())
 }

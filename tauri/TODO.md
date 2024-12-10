@@ -10,7 +10,7 @@
 
 * [ ] data layer: 
 
-  - [ ] create project (sqlite db on disk)
+  - [x] create project (sqlite db on disk)
 
   - [x] delete project  
 
