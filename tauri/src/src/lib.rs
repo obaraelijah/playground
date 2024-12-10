@@ -22,12 +22,7 @@ use gql::Schema;
 // ... single thread-safe DAL struct with cache and all ops.
 //     Cache updated via interior mutability (Arc<RwLock<Cache>>)
 //
-// GQL api:
-//
-// * Query
-// * Mutation
-//
-// GQL api needs access to data access layer
+//     ! make sure to use tokio::sync::RwLock !
 //
 
 #[tauri::command]

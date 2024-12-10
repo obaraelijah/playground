@@ -18,8 +18,11 @@
 
   - [x] list projects  
 
-  - [ ] better projects abstraction than procedural API with 
+  - [x] better projects abstraction than procedural API with 
     `ProjectsDir` struct
+
+  - [ ] fs layer that makes sure paths are correctly formatted and
+    that files exist  
 
   - [ ] insert entry into project
 
@@ -32,6 +35,5 @@
   - [ ] cache db connections
 
 * [ ] graphql interface
-  
+
 * [ ] secure tauri (isolation, csp, ...)
- 
