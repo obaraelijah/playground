@@ -23,11 +23,11 @@
 
   - [x] better fs ops handling
 
-  - [ ] insert entry into project
+  - [x] insert entry into project
 
-  - [ ] delete entry from project
+  - [x] delete entry from project
 
-  - [ ] read entries from project
+  - [x] read entries from project
 
 * [ ] proper state management
 
