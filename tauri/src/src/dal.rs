@@ -19,12 +19,6 @@ impl DAL {
     Self { path: path.into() }
   }
 
-  fn project_path<P: AsRef<Path>>(&self, project: P) -> PathBuf {
-    let mut path = self.path.clone();
-    path.push(project);
-    path
-  }
-
   async fn create_project<P: AsRef<Path>>(
     &self,
     project: P,
@@ -66,6 +60,20 @@ impl DAL {
     }
 
     Ok(projects)
+  }
+
+  async fn project<P: AsRef<Path>>(
+    &self,
+    project: P,
+  ) -> Option<Project> {
+    // TODO: here cache project
+    Project::open(self.project_path(project)).await.ok()
+  }
+
+  fn project_path<P: AsRef<Path>>(&self, project: P) -> PathBuf {
+    let mut path = self.path.clone();
+    path.push(project);
+    path
   }
 }
 
@@ -144,6 +152,8 @@ mod tests {
   use std::env;
   use std::fs;
 
+  use crate::api::Entry;
+
   use super::DAL;
 
   #[tokio::test]
@@ -197,14 +207,38 @@ mod tests {
 
     let dir = env::var("PROJECTS_DIR").unwrap();
 
+    let project = "test entries";
+
     let dal = DAL::new(dir);
 
-    // TODO: create project
-    //       list entries
-    //       insert entry
-    //       list entries
-    //       delete entry
-    //       list entries
-    //       delete project
+    dal.create_project(project).await.unwrap();
+
+    let p = dal.project(project).await.unwrap();
+
+    assert_eq!(p.list_entries().await.unwrap(), vec![]);
+
+    let e = Entry {
+      id: None,
+      title: "x".to_owned(),
+      body: "lorem ipsum".to_owned(),
+      published: false,
+    };
+
+    assert_eq!(p.insert_entry(e).await.unwrap(), 1);
+
+    let e_expected = Entry {
+      id: Some(1),
+      title: "x".to_owned(),
+      body: "lorem ipsum".to_owned(),
+      published: false,
+    };
+
+    assert_eq!(p.list_entries().await.unwrap(), vec![e_expected]);
+
+    p.delete_entry(1).await.unwrap();
+
+    assert_eq!(p.list_entries().await.unwrap(), vec![]);
+
+    dal.delete_project(project).unwrap();
   }
 }
