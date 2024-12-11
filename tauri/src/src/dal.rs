@@ -77,6 +77,13 @@ impl DAL {
   }
 }
 
+/// Provides access to the database of a project.
+///
+/// A [`Project`](Self) is cheaply clonable, because the connection
+/// pool itself is just an [`Arc`](Arc) to the underlying connection
+/// pool state.
+///
+#[derive(Clone)]
 struct Project {
   pool: SqlitePool,
 }
