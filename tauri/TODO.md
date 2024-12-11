@@ -35,6 +35,10 @@
 
 * [ ] graphql interface
 
+- [ ] implement endpoints
+
+- [ ] test  
+  
 * [ ] secure tauri (isolation, csp, ...)
 
 * [ ] basic frontend
