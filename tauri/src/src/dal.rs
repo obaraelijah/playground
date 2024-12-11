@@ -2,8 +2,12 @@ use anyhow::anyhow;
 
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 
+use futures_util::stream::TryStreamExt;
+
 use std::fs;
 use std::path::{Path, PathBuf};
+
+use crate::api::Entry;
 
 #[derive(Clone)]
 pub struct DAL {
@@ -104,19 +108,34 @@ impl Project {
     Ok(())
   }
 
-  async fn insert_entry() -> anyhow::Result<()> {
-    // here access cached connection pool to project
-    todo!()
+  async fn insert_entry(&self, e: Entry) -> anyhow::Result<u32> {
+    let id = sqlx::query(
+      "INSERT INTO entries (title, body, published) VALUES (?, ?, ?);",
+    )
+    .bind(e.title)
+    .bind(e.body)
+    .bind(e.published)
+    .execute(&self.pool)
+    .await?
+    .last_insert_rowid();
+
+    Ok(id.try_into()?)
   }
 
-  async fn delete_entry() -> anyhow::Result<()> {
-    // here access cached connection pool to project
-    todo!()
+  async fn delete_entry(&self, id: u32) -> anyhow::Result<()> {
+    sqlx::query("DELETE FROM entries WHERE id = ?")
+      .bind(id)
+      .execute(&self.pool)
+      .await?;
+
+    Ok(())
   }
 
-  async fn list_entries() -> anyhow::Result<()> {
-    // here access cached connection pool to project
-    todo!()
+  async fn list_entries(&self) -> Result<Vec<Entry>, sqlx::Error> {
+    sqlx::query_as::<_, Entry>("SELECT * FROM entries;")
+      .fetch(&self.pool)
+      .try_collect()
+      .await
   }
 }
 
@@ -126,25 +145,6 @@ mod tests {
   use std::fs;
 
   use super::DAL;
-
-  #[tokio::test]
-  async fn test_duplicated_project() {
-    dotenv::dotenv().unwrap();
-
-    let dir = env::var("PROJECTS_DIR").unwrap();
-
-    let dal = DAL::new(dir);
-
-    dal.create_project("test dublicated").await.unwrap();
-
-    // second call should fail, because project already exists
-
-    assert!(dal.create_project("test dublicated").await.is_err());
-
-    // clean up projects after test
-
-    dal.delete_project("test dublicated").unwrap();
-  }
 
   #[tokio::test]
   async fn test_list_projects() {
@@ -170,5 +170,41 @@ mod tests {
     dal.delete_project("test 1").unwrap();
 
     assert_eq!(dal.list_projects().unwrap(), Vec::<String>::new());
+  }
+
+  #[tokio::test]
+  async fn test_duplicated_project() {
+    dotenv::dotenv().unwrap();
+
+    let dir = env::var("PROJECTS_DIR").unwrap();
+
+    let dal = DAL::new(dir);
+
+    dal.create_project("test dublicated").await.unwrap();
+
+    // second call should fail, because project already exists
+
+    assert!(dal.create_project("test dublicated").await.is_err());
+
+    // clean up projects after test
+
+    dal.delete_project("test dublicated").unwrap();
+  }
+
+  #[tokio::test]
+  async fn test_entries() {
+    dotenv::dotenv().unwrap();
+
+    let dir = env::var("PROJECTS_DIR").unwrap();
+
+    let dal = DAL::new(dir);
+
+    // TODO: create project
+    //       list entries
+    //       insert entry
+    //       list entries
+    //       delete entry
+    //       list entries
+    //       delete project
   }
 }
