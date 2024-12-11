@@ -27,20 +27,20 @@ use gql::Schema;
 
 #[tauri::command]
 async fn graphql(
-  query: Request,
-  schema: State<'_, Schema>,
+    query: Request,
+    schema: State<'_, Schema>,
 ) -> Result<Response, Vec<ServerError>> {
-  schema.execute(query).await.into_result()
+    schema.execute(query).await.into_result()
 }
 
 pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
-  let dal = DAL::new(env::var("PROJECTS_DIR")?);
-  let schema = Schema::new(dal);
+    let dal = DAL::new(env::var("PROJECTS_DIR")?);
+    let schema = Schema::new(dal);
 
-  let app = tauri::Builder::default()
-    .manage(schema)
-    .invoke_handler(tauri::generate_handler![graphql])
-    .build(tauri::generate_context!())?;
+    let app = tauri::Builder::default()
+        .manage(schema)
+        .invoke_handler(tauri::generate_handler![graphql])
+        .build(tauri::generate_context!())?;
 
-  Ok(app)
+    Ok(app)
 }
