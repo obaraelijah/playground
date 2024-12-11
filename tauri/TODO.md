@@ -10,7 +10,7 @@
 
 * [x] use String instead of OsString
 
-* [ ] data layer: 
+* [x] data layer: 
 
   - [x] create project (sqlite db on disk)
 
@@ -36,3 +36,9 @@
 * [ ] graphql interface
 
 * [ ] secure tauri (isolation, csp, ...)
+
+* [ ] basic frontend
+
+* [ ] bundling
+
+* [ ] update mechanism
