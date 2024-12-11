@@ -21,8 +21,7 @@
   - [x] better projects abstraction than procedural API with 
     `ProjectsDir` struct
 
-  - [ ] fs layer that makes sure paths are correctly formatted and
-    that files exist  
+  - [x] better fs ops handling
 
   - [ ] insert entry into project
 

@@ -3,24 +3,29 @@ use anyhow::anyhow;
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 
 use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub struct DAL {
-  dir: String,
+  path: PathBuf,
 }
 
 impl DAL {
-  pub fn new<T: AsRef<str>>(dir: T) -> Self {
-    Self {
-      dir: dir.as_ref().to_owned(),
-    }
+  pub fn new<T: Into<PathBuf>>(path: T) -> Self {
+    Self { path: path.into() }
   }
 
-  async fn create_project<T: AsRef<str>>(
+  fn project_path<P: AsRef<Path>>(&self, project: P) -> PathBuf {
+    let mut path = self.path.clone();
+    path.push(project);
+    path
+  }
+
+  async fn create_project<P: AsRef<Path>>(
     &self,
-    name: T,
+    project: P,
   ) -> anyhow::Result<()> {
-    let file_name = format!("{}/{}.db", self.dir, name.as_ref());
+    let path = self.project_path(project);
 
     // File must be created first, so that the pool can connect.
     //
@@ -32,42 +37,28 @@ impl DAL {
         .read(true)
         .write(true)
         .create_new(true)
-        .open(&file_name)?;
+        .open(&path)?;
     }
 
-    let db = format!("sqlite:{}", file_name);
-
-    Project::create(&db).await?;
+    Project::create(path).await?;
 
     Ok(())
   }
 
-  fn delete_project<T: AsRef<str>>(
+  fn delete_project<P: AsRef<Path>>(
     &self,
-    name: T,
+    project: P,
   ) -> anyhow::Result<()> {
-    let file_name = format!("{}/{}.db", self.dir, name.as_ref());
-    Ok(fs::remove_file(file_name)?)
+    Ok(fs::remove_file(self.project_path(project))?)
   }
 
   fn list_projects(&self) -> anyhow::Result<Vec<String>> {
     let mut projects = Vec::new();
 
-    for entry in fs::read_dir(&self.dir)? {
-      let file_name = entry?.file_name();
-
-      let file_ext = file_name
-        .to_str()
-        .ok_or(anyhow!("error reading file name"))?
-        .split(".")
-        .last()
-        .ok_or(anyhow!("error deconstructing file name"))?;
-
-      if file_ext == "db" {
-        projects.push(file_name.into_string().map_err(|_| {
-          anyhow!("couldn't parse file name into valid UTF-8")
-        })?);
-      }
+    for entry in fs::read_dir(&self.path)? {
+      projects.push(entry?.file_name().into_string().map_err(
+        |_| anyhow!("couldn't parse file name into valid UTF-8"),
+      )?);
     }
 
     Ok(projects)
@@ -79,17 +70,19 @@ struct Project {
 }
 
 impl Project {
-  async fn open(db: &str) -> anyhow::Result<Self> {
+  async fn open<P: AsRef<Path>>(file: P) -> anyhow::Result<Self> {
     let pool = SqlitePoolOptions::new()
       .max_connections(1)
-      .connect(&db)
+      .connect(
+        file.as_ref().to_str().ok_or(anyhow!("filename invalid"))?,
+      )
       .await?;
 
     Ok(Self { pool })
   }
 
-  async fn create(db: &str) -> anyhow::Result<Self> {
-    let instance = Self::open(db).await?;
+  async fn create<P: AsRef<Path>>(file: P) -> anyhow::Result<Self> {
+    let instance = Self::open(file).await?;
     instance.create_tables().await?;
     Ok(instance)
   }
@@ -159,7 +152,7 @@ mod tests {
 
     let dir = env::var("PROJECTS_DIR").unwrap();
 
-    let dal = DAL::new(&dir);
+    let dal = DAL::new(dir);
 
     assert_eq!(dal.list_projects().unwrap(), Vec::<String>::new());
 
@@ -169,23 +162,10 @@ mod tests {
 
     assert_eq!(
       dal.list_projects().unwrap(),
-      vec!["test 1.db".to_owned()],
+      vec!["test 1".to_owned()],
     );
 
-    // add random file, make sure it is excluded from test
-
-    fs::File::create(format!("{}/not a db.txt", dir)).unwrap();
-
-    assert_eq!(
-      dal.list_projects().unwrap(),
-      vec!["test 1.db".to_owned()],
-    );
-
-    // remove random file again
-
-    fs::remove_file(format!("{}/not a db.txt", dir)).unwrap();
-
-    // delete project created above
+    // delete project
 
     dal.delete_project("test 1").unwrap();
 
