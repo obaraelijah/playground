@@ -4,26 +4,34 @@ use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 
 use futures_util::stream::TryStreamExt;
 
+use tokio::sync::RwLock;
+
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use crate::api::Entry;
 
 #[derive(Clone)]
 pub struct DAL {
   path: PathBuf,
+  cache: Arc<RwLock<HashMap<PathBuf, Project>>>,
 }
 
 impl DAL {
   pub fn new<T: Into<PathBuf>>(path: T) -> Self {
-    Self { path: path.into() }
+    Self {
+      path: path.into(),
+      cache: Arc::new(RwLock::new(HashMap::new())),
+    }
   }
 
   async fn create_project<P: AsRef<Path>>(
     &self,
     project: P,
-  ) -> anyhow::Result<()> {
-    let path = self.project_path(project);
+  ) -> anyhow::Result<Project> {
+    let path = self.project_path(&project);
 
     // File must be created first, so that the pool can connect.
     //
@@ -38,9 +46,11 @@ impl DAL {
         .open(&path)?;
     }
 
-    Project::create(path).await?;
+    let p = Project::create(path).await?;
 
-    Ok(())
+    self.insert_into_cache(project, p.clone()).await;
+
+    Ok(p)
   }
 
   fn delete_project<P: AsRef<Path>>(
@@ -65,9 +75,29 @@ impl DAL {
   async fn project<P: AsRef<Path>>(
     &self,
     project: P,
-  ) -> Option<Project> {
-    // TODO: here cache project
-    Project::open(self.project_path(project)).await.ok()
+  ) -> anyhow::Result<Project> {
+    match {
+      let cache = self.cache.read().await;
+      cache.get(project.as_ref()).map(|x| x.clone())
+    } {
+      Some(p) => Ok(p),
+      None => {
+        let p = Project::open(self.project_path(&project)).await?;
+
+        self.insert_into_cache(project, p.clone()).await;
+
+        Ok(p)
+      }
+    }
+  }
+
+  async fn insert_into_cache<P: AsRef<Path>>(
+    &self,
+    key: P,
+    val: Project,
+  ) {
+    let mut cache = self.cache.write().await;
+    cache.insert(key.as_ref().to_owned(), val);
   }
 
   fn project_path<P: AsRef<Path>>(&self, project: P) -> PathBuf {
@@ -157,7 +187,6 @@ impl Project {
 #[cfg(test)]
 mod tests {
   use std::env;
-  use std::fs;
 
   use crate::api::Entry;
 
