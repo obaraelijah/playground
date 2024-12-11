@@ -995,6 +995,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "dotenv",
+ "futures-util",
  "serde",
  "serde_json",
  "sqlx",
