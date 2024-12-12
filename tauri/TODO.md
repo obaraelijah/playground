@@ -35,6 +35,8 @@
 
 * [ ] graphql interface
   
+  - [ ] error type replacing anyhow  
+
   - [ ] error type  
 
   - [ ] implement endpoints
