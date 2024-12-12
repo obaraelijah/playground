@@ -1,5 +1,3 @@
-use anyhow::anyhow;
-
 use async_graphql::{Request, Response, ServerError};
 
 use tauri::State;
