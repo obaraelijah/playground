@@ -47,4 +47,6 @@
 
 * [ ] bundling
 
+* [ ] cli command for exporting SDL
+
 * [ ] update mechanism
