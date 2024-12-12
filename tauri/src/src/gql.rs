@@ -92,7 +92,6 @@ impl Mutation {
     e: Entry,
   ) -> Result<EmptyFields> {
     self.dal.project(&project).await?.create_entry(e).await?;
-
     Ok(EmptyFields)
   }
 
@@ -102,7 +101,6 @@ impl Mutation {
     id: u32,
   ) -> Result<EmptyFields> {
     self.dal.project(&project).await?.delete_entry(id).await?;
-
     Ok(EmptyFields)
   }
 }
