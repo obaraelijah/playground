@@ -46,15 +46,11 @@ impl Query {
   }
 
   async fn entries(&self, project: String) -> Result<Vec<Entry>> {
-    let entries = self.dal.project(&project).await?.entries().await?;
-
-    Ok(entries)
+    Ok(self.dal.project(&project).await?.entries().await?)
   }
 
   async fn entry(&self, project: String, id: u32) -> Result<Entry> {
-    let entry = self.dal.project(&project).await?.entry(id).await?;
-
-    Ok(entry)
+    Ok(self.dal.project(&project).await?.entry(id).await?)
   }
 }
 
