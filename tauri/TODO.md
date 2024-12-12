@@ -29,20 +29,18 @@
 
   - [x] read entries from project
 
-* [ ] proper state management
+* [x] proper state management
 
-  - [ ] cache db connections
+  - [x] cache db connections
 
 * [ ] graphql interface
-  
-  - [ ] error type replacing anyhow  
 
-  - [ ] error type  
-
-  - [ ] implement endpoints
+  - [x] error handling
+ 
+  - [x] implement endpoints
 
   - [ ] test  
-  
+
 * [ ] secure tauri (isolation, csp, ...)
 
 * [ ] basic frontend

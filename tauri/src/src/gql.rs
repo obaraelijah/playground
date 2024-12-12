@@ -2,7 +2,8 @@ use crate::api::Entry;
 use crate::dal::DAL;
 
 use async_graphql::{
-  EmptySubscription, Object, Request, Response, Schema as GQLSchema,
+  connection::EmptyFields, EmptySubscription, Object, Request,
+  Response, Result, Schema as GQLSchema,
 };
 
 pub struct Schema {
@@ -40,30 +41,20 @@ impl Query {
 
 #[Object]
 impl Query {
-  async fn projects(&self) -> Vec<String> {
-    self.dal.projects().unwrap()
+  async fn projects(&self) -> Result<Vec<String>> {
+    Ok(self.dal.projects()?)
   }
 
-  async fn entries(&self, project: String) -> Vec<Entry> {
-    self
-      .dal
-      .project(&project)
-      .await
-      .unwrap()
-      .entries()
-      .await
-      .unwrap()
+  async fn entries(&self, project: String) -> Result<Vec<Entry>> {
+    let entries = self.dal.project(&project).await?.entries().await?;
+
+    Ok(entries)
   }
 
-  async fn entry(&self, project: String, id: u32) -> Entry {
-    self
-      .dal
-      .project(&project)
-      .await
-      .unwrap()
-      .entry(id)
-      .await
-      .unwrap()
+  async fn entry(&self, project: String, id: u32) -> Result<Entry> {
+    let entry = self.dal.project(&project).await?.entry(id).await?;
+
+    Ok(entry)
   }
 }
 
@@ -79,39 +70,39 @@ impl Mutation {
 
 #[Object]
 impl Mutation {
-  async fn create_project(&self, project: String) -> bool {
-    self.dal.create_project(&project).await.unwrap();
-    true
+  async fn create_project(
+    &self,
+    project: String,
+  ) -> Result<EmptyFields> {
+    self.dal.create_project(&project).await?;
+    Ok(EmptyFields)
   }
 
-  async fn delete_project(&self, project: String) -> bool {
-    self.dal.delete_project(&project).unwrap();
-    true
+  async fn delete_project(
+    &self,
+    project: String,
+  ) -> Result<EmptyFields> {
+    self.dal.delete_project(&project)?;
+    Ok(EmptyFields)
   }
 
-  async fn create_entry(&self, project: String, e: Entry) -> bool {
-    self
-      .dal
-      .project(&project)
-      .await
-      .unwrap()
-      .create_entry(e)
-      .await
-      .unwrap();
+  async fn create_entry(
+    &self,
+    project: String,
+    e: Entry,
+  ) -> Result<EmptyFields> {
+    self.dal.project(&project).await?.create_entry(e).await?;
 
-    true
+    Ok(EmptyFields)
   }
 
-  async fn delete_entry(&self, project: String, id: u32) -> bool {
-    self
-      .dal
-      .project(&project)
-      .await
-      .unwrap()
-      .delete_entry(id)
-      .await
-      .unwrap();
+  async fn delete_entry(
+    &self,
+    project: String,
+    id: u32,
+  ) -> Result<EmptyFields> {
+    self.dal.project(&project).await?.delete_entry(id).await?;
 
-    true
+    Ok(EmptyFields)
   }
 }
