@@ -43,6 +43,12 @@
 
 * [ ] cli command for exporting SDL
 
+  - [ ] create typescript types from SDL
+
+  - [ ] integrate into frontend  
+ 
+  - [ ] write dev documentation on how to create types for ts
+
 * [ ] basic frontend
 
 * [ ] secure tauri (isolation, csp, ...)
