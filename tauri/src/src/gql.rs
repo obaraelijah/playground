@@ -79,10 +79,16 @@ impl Mutation {
   async fn create_entry(
     &self,
     project: String,
-    e: CreateEntry,
-  ) -> Result<bool> {
-    self.dal.project(&project).await?.create_entry(e).await?;
-    Ok(true)
+    entry: CreateEntry,
+  ) -> Result<u32> {
+    Ok(
+      self
+        .dal
+        .project(&project)
+        .await?
+        .create_entry(entry)
+        .await?,
+    )
   }
 
   async fn delete_entry(
@@ -103,13 +109,18 @@ mod tests {
 
   use std::env;
 
+  use crate::api::Entry;
   use crate::dal::DAL;
 
   use super::Schema;
 
   #[derive(Deserialize)]
+  #[serde(rename_all = "camelCase")]
   struct Q {
     projects: Option<Vec<String>>,
+    entries: Option<Vec<Entry>>,
+    entry: Option<Entry>,
+    create_entry: Option<u32>,
   }
 
   #[tokio::test]
@@ -199,21 +210,158 @@ mod tests {
   #[tokio::test]
   async fn test_entries() {
     let dir = env::var("PROJECTS_DIR").unwrap();
-    
+
     let dal = DAL::new(dir);
-    
+
     let s = Schema::new(dal);
-    
-    // TODO:
-    //
-    // create project
-    // list entries
-    // create entry
-    // check response
-    // retrieve entries
-    // retrieve entry
-    // delete entry
-    // list entries
-    // delete project
+
+    let entry_expected = Entry {
+      id: 1,
+      title: "x".to_owned(),
+      body: "lorem ipsum".to_owned(),
+      published: false,
+    };
+
+    s.execute(
+      r#"
+        mutation {
+          createProject(project: "test gql entries")
+        }
+      "#,
+    )
+    .await
+    .into_result()
+    .unwrap();
+
+    let v = s
+      .execute(
+        r#"
+        {
+          entries(project: "test gql entries") {
+            id
+            title
+            body
+            published
+          }
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.entries.unwrap(), Vec::<Entry>::new());
+
+    let v = s
+      .execute(
+        r#"
+        mutation {
+          createEntry(
+            project: "test gql entries",
+            entry: {
+              title: "x"
+              body: "lorem ipsum"
+              published: false
+            }
+          )
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    println!("{:?}", v.data);
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.create_entry.unwrap(), 1);
+
+    let v = s
+      .execute(
+        r#"
+        {
+          entries(project: "test gql entries") {
+            id
+            title
+            body
+            published
+          }
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.entries.unwrap(), vec![entry_expected.clone()]);
+
+    let v = s
+      .execute(
+        r#"
+        {
+          entry(project: "test gql entries" id: 1) {
+            id
+            title
+            body
+            published
+          }
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.entry.unwrap(), entry_expected);
+
+    s.execute(
+      r#"
+        mutation {
+          deleteEntry(project: "test gql entries", id: 1)
+        }
+      "#,
+    )
+    .await
+    .into_result()
+    .unwrap();
+
+    let v = s
+      .execute(
+        r#"
+        {
+          entries(project: "test gql entries") {
+            id
+            title
+            body
+            published
+          }
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.entries.unwrap(), Vec::<Entry>::new());
+
+    s.execute(
+      r#"
+        mutation {
+          deleteProject(project: "test gql entries")
+        }
+      "#,
+    )
+    .await
+    .into_result()
+    .unwrap();
   }
 }

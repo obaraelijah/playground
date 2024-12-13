@@ -1,8 +1,18 @@
+use serde::Deserialize;
+
 use sqlx::FromRow;
 
 use async_graphql::{InputObject, SimpleObject};
 
-#[derive(FromRow, SimpleObject, InputObject, Debug, PartialEq)]
+#[derive(
+  FromRow,
+  SimpleObject,
+  InputObject,
+  Debug,
+  PartialEq,
+  Deserialize,
+  Clone,
+)]
 pub struct Entry {
   pub id: u32,
   pub title: String,
