@@ -195,4 +195,25 @@ mod tests {
 
     assert_eq!(q.projects.unwrap(), Vec::<String>::new());
   }
+
+  #[tokio::test]
+  async fn test_entries() {
+    let dir = env::var("PROJECTS_DIR").unwrap();
+    
+    let dal = DAL::new(dir);
+    
+    let s = Schema::new(dal);
+    
+    // TODO:
+    //
+    // create project
+    // list entries
+    // create entry
+    // check response
+    // retrieve entries
+    // retrieve entry
+    // delete entry
+    // list entries
+    // delete project
+  }
 }
