@@ -97,11 +97,20 @@ impl Mutation {
 
 #[cfg(test)]
 mod tests {
+  use serde::Deserialize;
+
+  use async_graphql::from_value;
+
   use std::env;
 
   use crate::dal::DAL;
 
   use super::Schema;
+
+  #[derive(Deserialize)]
+  struct Q {
+    projects: Option<Vec<String>>,
+  }
 
   #[tokio::test]
   async fn test_projects() {
@@ -113,7 +122,21 @@ mod tests {
 
     let s = Schema::new(dal);
 
-    // TODO: list projects
+    let v = s
+      .execute(
+        r#"
+        {
+          projects
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.projects.unwrap(), Vec::<String>::new());
 
     s.execute(
       r#"
@@ -126,7 +149,24 @@ mod tests {
     .into_result()
     .unwrap();
 
-    // TODO: list projects
+    let v = s
+      .execute(
+        r#"
+        {
+          projects
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(
+      q.projects.unwrap(),
+      vec!["test gql projects".to_owned()]
+    );
 
     s.execute(
       r#"
@@ -139,6 +179,20 @@ mod tests {
     .into_result()
     .unwrap();
 
-    // TODO: list projects
+    let v = s
+      .execute(
+        r#"
+        {
+          projects
+        }
+      "#,
+      )
+      .await
+      .into_result()
+      .unwrap();
+
+    let q: Q = from_value(v.data).unwrap();
+
+    assert_eq!(q.projects.unwrap(), Vec::<String>::new());
   }
 }
