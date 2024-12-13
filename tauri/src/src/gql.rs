@@ -1,9 +1,9 @@
-use crate::api::Entry;
+use crate::api::{CreateEntry, Entry};
 use crate::dal::DAL;
 
 use async_graphql::{
-  connection::EmptyFields, EmptySubscription, Object, Request,
-  Response, Result, Schema as GQLSchema,
+  EmptySubscription, Object, Request, Response, Result,
+  Schema as GQLSchema,
 };
 
 pub struct Schema {
@@ -66,37 +66,79 @@ impl Mutation {
 
 #[Object]
 impl Mutation {
-  async fn create_project(
-    &self,
-    project: String,
-  ) -> Result<EmptyFields> {
+  async fn create_project(&self, project: String) -> Result<bool> {
     self.dal.create_project(&project).await?;
-    Ok(EmptyFields)
+    Ok(true)
   }
 
-  async fn delete_project(
-    &self,
-    project: String,
-  ) -> Result<EmptyFields> {
+  async fn delete_project(&self, project: String) -> Result<bool> {
     self.dal.delete_project(&project)?;
-    Ok(EmptyFields)
+    Ok(true)
   }
 
   async fn create_entry(
     &self,
     project: String,
-    e: Entry,
-  ) -> Result<EmptyFields> {
+    e: CreateEntry,
+  ) -> Result<bool> {
     self.dal.project(&project).await?.create_entry(e).await?;
-    Ok(EmptyFields)
+    Ok(true)
   }
 
   async fn delete_entry(
     &self,
     project: String,
     id: u32,
-  ) -> Result<EmptyFields> {
+  ) -> Result<bool> {
     self.dal.project(&project).await?.delete_entry(id).await?;
-    Ok(EmptyFields)
+    Ok(true)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::env;
+
+  use crate::dal::DAL;
+
+  use super::Schema;
+
+  #[tokio::test]
+  async fn test_projects() {
+    dotenv::dotenv().unwrap();
+
+    let dir = env::var("PROJECTS_DIR").unwrap();
+
+    let dal = DAL::new(dir);
+
+    let s = Schema::new(dal);
+
+    // TODO: list projects
+
+    s.execute(
+      r#"
+        mutation {
+          createProject(project: "test gql projects")
+        }
+      "#,
+    )
+    .await
+    .into_result()
+    .unwrap();
+
+    // TODO: list projects
+
+    s.execute(
+      r#"
+        mutation {
+          deleteProject(project: "test gql projects")
+        }
+      "#,
+    )
+    .await
+    .into_result()
+    .unwrap();
+
+    // TODO: list projects
   }
 }

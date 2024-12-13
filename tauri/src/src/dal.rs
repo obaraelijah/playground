@@ -11,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::api::Entry;
+use crate::api::{CreateEntry, Entry};
 
 #[derive(Clone)]
 pub struct DAL {
@@ -153,7 +153,10 @@ impl Project {
     Ok(())
   }
 
-  pub async fn create_entry(&self, e: Entry) -> anyhow::Result<u32> {
+  pub async fn create_entry(
+    &self,
+    e: CreateEntry,
+  ) -> anyhow::Result<u32> {
     let id = sqlx::query(
       "INSERT INTO entries (title, body, published) VALUES (?, ?, ?);",
     )
@@ -195,7 +198,7 @@ impl Project {
 mod tests {
   use std::env;
 
-  use crate::api::Entry;
+  use crate::api::{CreateEntry, Entry};
 
   use super::DAL;
 
@@ -257,8 +260,7 @@ mod tests {
 
     assert_eq!(p.entries().await.unwrap(), vec![]);
 
-    let e = Entry {
-      id: None,
+    let e = CreateEntry {
       title: "x".to_owned(),
       body: "lorem ipsum".to_owned(),
       published: false,
@@ -267,7 +269,7 @@ mod tests {
     assert_eq!(p.create_entry(e).await.unwrap(), 1);
 
     let e_expected = Entry {
-      id: Some(1),
+      id: 1,
       title: "x".to_owned(),
       body: "lorem ipsum".to_owned(),
       published: false,
