@@ -41,11 +41,11 @@
 
   - [x] test  
 
-* [ ] secure tauri (isolation, csp, ...)
+* [ ] cli command for exporting SDL
 
 * [ ] basic frontend
 
-* [ ] cli command for exporting SDL
+* [ ] secure tauri (isolation, csp, ...)
 
 * [ ] bundling
 
