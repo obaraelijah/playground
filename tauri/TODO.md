@@ -45,12 +45,12 @@
 
   - [x] binary for exporting SDL
 
-  - [ ] create ts types from SDL
+  - [x] create ts types from SDL
+
+  - [x] write dev documentation on how to create types for ts
 
   - [ ] integrate into frontend  
  
-  - [ ] write dev documentation on how to create types for ts
-
 * [ ] basic frontend
 
 * [ ] secure tauri (isolation, csp, ...)

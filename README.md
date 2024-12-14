@@ -35,12 +35,26 @@ cargo test --manifest-path=src/Cargo.toml -- --test-threads=1
 
 ### Export GraphQL SDL to the Frontend 
 
-1. Export `SDL` from the backend:
+1. Export the `SDL` from the backend:
 
    ```bash
-   cargo run --bin export_sdl --manifest-path=src/Cargo.toml > sdl.txt
+   cargo run \
+      --bin export_sdl \
+      --manifest-path=src/Cargo.toml > frontend/schema.graphql
    ```
 
-   This will create the `sdl.txt` file with the schema definition.
+   This will create the `frontend/schema.graphql` file with the schema
+   definition.
 
+2. Generate types from the `SDL`:
+
+   ```bash
+   cd frontend
+   mkdir -p gql
+   npm run codegen
+   ```
+   
+   This will create native types from the exported `SDL` in the `gql/`
+   directory that can be used by the frontend.
+  
 [prerequisites]: https://tauri.app/v1/guides/getting-started/prerequisites
