@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
-  "identifier": "com.tauri.dev",
-  "productName": "tauri-app",
+  "identifier": "example-app.tauri.sams.dev",
+  "productName": "example app",
   "version": "0.0.0",
   "build": {
     "beforeBuildCommand": "cd ../frontend && npm run build",
@@ -18,7 +18,7 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "Tauri App",
+        "title": "example app",
         "width": 800
       }
     ]
