@@ -1,4 +1,4 @@
-use async_graphql::{Request, Response, ServerError};
+use async_graphql::{Response, ServerError};
 
 use tauri::State;
 
@@ -13,7 +13,7 @@ use gql::Schema;
 
 #[tauri::command]
 async fn graphql(
-  query: Request,
+  query: String,
   schema: State<'_, Schema>,
 ) -> Result<Response, Vec<ServerError>> {
   schema.execute(query).await.into_result()
