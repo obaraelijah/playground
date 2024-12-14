@@ -41,9 +41,11 @@
 
   - [x] test  
 
-* [ ] cli command for exporting SDL
+* [ ] generate ts types from SDL 
 
-  - [ ] create typescript types from SDL
+  - [x] binary for exporting SDL
+
+  - [ ] create ts types from SDL
 
   - [ ] integrate into frontend  
  

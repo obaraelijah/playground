@@ -11,18 +11,6 @@ mod gql;
 use dal::DAL;
 use gql::Schema;
 
-// data access layer:
-//
-// * Projects (ops for projects: list, create, delete)
-// * Project (db connection)
-// * ProjectCache (Map<String, Project>, shared)
-//
-// ... single thread-safe DAL struct with cache and all ops.
-//     Cache updated via interior mutability (Arc<RwLock<Cache>>)
-//
-//     ! make sure to use tokio::sync::RwLock !
-//
-
 #[tauri::command]
 async fn graphql(
   query: Request,
@@ -31,12 +19,13 @@ async fn graphql(
   schema.execute(query).await.into_result()
 }
 
-pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
-  let dal = DAL::new(env::var("PROJECTS_DIR")?);
-  let schema = Schema::new(dal);
+pub fn schema() -> anyhow::Result<Schema> {
+  Ok(Schema::new(DAL::new(env::var("PROJECTS_DIR")?)))
+}
 
+pub fn app() -> anyhow::Result<tauri::App<tauri::Wry>> {
   let app = tauri::Builder::default()
-    .manage(schema)
+    .manage(schema()?)
     .invoke_handler(tauri::generate_handler![graphql])
     .build(tauri::generate_context!())?;
 

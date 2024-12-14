@@ -27,6 +27,10 @@ impl Schema {
   ) -> Response {
     self.inner.execute(request).await
   }
+
+  pub fn sdl(&self) -> String {
+    self.inner.sdl()
+  }
 }
 
 struct Query {

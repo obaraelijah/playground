@@ -7,6 +7,7 @@ storage.
 ## Development Setup
 
 ### Prerequisites
+
 Tauri has a [guide][prerequisites] for setting up the basic 
 dependencies for tauri apps, including the rust toolchain.
 Additionally, since this example app uses 
@@ -24,11 +25,22 @@ cargo tauri dev
 ```
 
 ### Tests
+
 Backend tests are run from the root directory of this repository with
 the following command:
 
 ```bash
 cargo test --manifest-path=src/Cargo.toml -- --test-threads=1
 ```
+
+### Export GraphQL SDL to the Frontend 
+
+1. Export `SDL` from the backend:
+
+   ```bash
+   cargo run --bin export_sdl --manifest-path=src/Cargo.toml > sdl.txt
+   ```
+
+   This will create the `sdl.txt` file with the schema definition.
 
 [prerequisites]: https://tauri.app/v1/guides/getting-started/prerequisites
